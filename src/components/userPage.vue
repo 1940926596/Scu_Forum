@@ -1,6 +1,8 @@
 <template>
   <div style="height: 100%;width: 100%">
-    <margin-header :is-u-active="this.$store.state.user.isUserActive"></margin-header>
+    <margin-header :is-home=true :is-u-active="this.$store.state.user.isUserActive" :user_id="this.$store.state.user.forum_user_id"
+                   :user_name="this.$store.state.user.forum_user_name"
+                   v-on:Screen1="Screen1"></margin-header>
     <div class="page">
       <div class="posts">
         <div class="yourPost">
@@ -12,15 +14,22 @@
           </div>
         </div>
         <div class="information">
-          <div class="content3">
+          <div v-if="!change" class="content3">
             <p>你的账号:</p>
             <p>{{ user.forum_name }}</p>
             <p>你的邮箱:</p>
             <p>{{ user.forum_email }}</p>
           </div>
+          <div v-if="change" class="content3">
+            <p>你的账号:</p>
+            <el-input v-model="user.forum_name"></el-input>
+            <p>你的邮箱:</p>
+            <el-input v-model="user.forum_email"></el-input>
+          </div>
           <div class="pic">
             <img :src="avatar" style="height:100px;width: 100px">
-            <el-button style="margin-top: 20px;margin-left: 20px">修改信息</el-button>
+            <el-button v-if="!change" style="margin-top: 20px;margin-left: 20px" @click="changeInfo">修改信息</el-button>
+            <el-button v-if="change" style="margin-top: 20px;margin-left: 20px" @click="haveChangeInfo">保存信息</el-button>
           </div>
         </div>
       </div>
@@ -44,13 +53,14 @@ import MarginHeader from "./Margin/marginHeader";
 import MarginFooter from "./Margin/marginFooter";
 import CommentOne from "./Pages/commentOne";
 import HavePageOne from "./Pages/havePageOne";
-import {isLogin} from "./api/getData";
+import {isLogin, logout} from "./api/getData";
 
 export default {
   name: "UserPage",
   components: {HavePageOne, CommentOne, MarginFooter, MarginHeader},
   data() {
     return {
+      change: false,
       avatar: require('../assets/user3.jpg'),
       pageForm: {
         page_sender_id: '',
@@ -123,6 +133,21 @@ export default {
       // }).catch((err)=>{
       //   console.log(err)
       // })
+    },
+    Screen1: function (val) {
+      this.page = val
+    },
+    changeInfo: function () {
+      this.change = true
+    },
+    haveChangeInfo: function () {
+      const self=this
+      self.axios.get('http://43.143.211.83:8080/forum_user_email_update?' + 'forum_id=' + self.user.forum_id + '&forum_name=' + self.user.forum_name+ '&forum_email=' + self.user.forum_email).then(()=>{
+        logout()
+        this.$router.push("/")
+        this.change = false
+        alert("修改成功，请重新登录")
+      })
     },
     submit: function () {
       const self = this

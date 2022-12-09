@@ -1,6 +1,6 @@
 <template>
   <div style="height: 100%;width: 100%;overflow: hidden">
-    <margin-header :is-u-active="this.$store.state.user.isUserActive"></margin-header>
+    <margin-header :is-u-active="this.$store.state.user.isUserActive" v-on:Screen1="Screen1" :is-home=false></margin-header>
     <div class="page">
       <div class="posts">
         <page-one v-for="(page1,index) in page" :key='index' :content="page1.page_send_content" :page_id="page1.page_id"
@@ -86,6 +86,9 @@ export default {
     }
   },
   methods: {
+    Screen1:function (val){
+      this.page=val;
+    },
     toPage: function () {
       this.$router.push('/page');
     },
@@ -107,7 +110,6 @@ export default {
     console.log(this.$store.state.user.test)
     test()
   },
-
   components: {
     PageOne,
     marginHeader,

@@ -5,11 +5,11 @@
         <img class="img" src="../../assets/header(1).png"/>
       </a>
       <a
-        aria-expanded="false"
-        aria-label="menu"
-        class="navbar-burger burger"
-        data-target="navbarBasicExample"
-        role="button">
+          aria-expanded="false"
+          aria-label="menu"
+          class="navbar-burger burger"
+          data-target="navbarBasicExample"
+          role="button">
 
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
@@ -41,10 +41,10 @@
           <div class="level-item">
             <div class="field has-addons">
               <p class="control">
-                <input class="input" placeholder="Find a post" type="text"/>
+                <input v-model="search" class="input" placeholder="Find a post" type="text"/>
               </p>
               <p class="control">
-                <button class="button">搜索</button>
+                <button class="button" @click="find">搜索</button>
               </p>
             </div>
           </div>
@@ -71,11 +71,11 @@
 
                         <b-field label="密码">
                           <b-input
-                            v-model="password"
-                            password-reveal
-                            placeholder="Your password"
-                            required
-                            type="password"
+                              v-model="password"
+                              password-reveal
+                              placeholder="Your password"
+                              required
+                              type="password"
                           ></b-input>
                         </b-field>
 
@@ -148,8 +148,16 @@ export default {
     return {
       email: "",
       password: "",
-      isActive: ''
-    };
+      isActive: '',
+      forum_ListRst: [],
+      page: {
+        page_id: '',
+        page_sender_id: '',
+        page_sender_name: '',
+        page_send_time: '',
+        page_send_content: ''
+      },
+    }
   },
   methods: {
     userhome() {
@@ -161,22 +169,22 @@ export default {
     login() {
       const self = this
       this.axios.get('http://43.143.211.83:8080/forum_oneUser_list_email?forum_user_email=' + this.email + '&forum_user_pwd=' + this.password).then(
-        (response) => {
-          console.log(this.$store.state.user)
-          console.log(response)
-          if (response.data.length) {
-            alert("登录成功")
-            self.$store.commit('setForum_user_id', response.data[0].forum_id)
-            self.$store.commit('setForum_user_name', response.data[0].forum_name)
-            self.$store.commit('setForum_user_pwd', response.data[0].forum_pwd)
-            self.$store.commit('setForum_user_email', response.data[0].forum_email)
-            self.$router.push('/userPage')
+          (response) => {
             console.log(this.$store.state.user)
-            login(this.$store.state.user.forum_user_email, this.$store.state.user.forum_user_pwd)
-            location.reload()
-          } else
-            alert("查无此人")
-        }
+            console.log(response)
+            if (response.data.length) {
+              alert("登录成功")
+              self.$store.commit('setForum_user_id', response.data[0].forum_id)
+              self.$store.commit('setForum_user_name', response.data[0].forum_name)
+              self.$store.commit('setForum_user_pwd', response.data[0].forum_pwd)
+              self.$store.commit('setForum_user_email', response.data[0].forum_email)
+              self.$router.push('/userPage')
+              console.log(this.$store.state.user)
+              login(this.$store.state.user.forum_user_email, this.$store.state.user.forum_user_pwd)
+              location.reload()
+            } else
+              alert("查无此人")
+          }
       )
     },
     register() {
@@ -189,13 +197,108 @@ export default {
       logout()
       this.$router.push('/')
       location.reload()
+    },
+    find: function () {
+      console.log(1111)
+      const self = this
+      let search = this.search;
+      if (!this.isHome) {
+        if (search) {
+          self.axios.get("http://43.143.211.83:8080/forum_page_list").then((response) => {
+            self.page = response.data
+            console.log(self.page)
+          })
+          this.forum_ListRst = []; // 结果列表置空
+          let regStr = '';
+          // 初始化正则表达式
+          for (let i = 0; i < search.length; i++) {
+            regStr = regStr + '(' + search[i] + ')([\\s]*)'; //跨字匹配
+          }
+          console.log(1111)
+          let reg = new RegExp(regStr);
+          console.log(reg);
+          for (let i = 0; i < this.page.length; i++) {
+            let name = this.page[i].page_send_content; //按照内容匹配
+            let regMatch = name.match(reg);
+            if (null !== regMatch) {// 将匹配的数据放入结果列表中
+              this.forum_ListRst.push(this.page[i]);
+            }
+          }
+          console.log(this.forum_ListRst)
+          this.$emit('Screen1', this.forum_ListRst)
+        } else this.$emit('Screen1', this.page)
+        return
+      }
+
+
+      if (this.isHome) {
+        if (search) {
+          this.forum_ListRst = []; // 结果列表置空
+          self.axios.get('http://43.143.211.83:8080/forum_AllPage_list?' + 'page_sender_id=' + self.user_id + '&page_sender_name=' + self.user_name)
+              .then((response) => {
+                self.page = response.data
+                console.log(self.page)
+                console.log(response.data)
+                console.log(this.$store.state.user.isUserActive)
+                let regStr = '';
+                // 初始化正则表达式
+                for (let i = 0; i < search.length; i++) {
+                  regStr = regStr + '(' + search[i] + ')([\\s]*)'; //跨字匹配
+                }
+                console.log(1111)
+                let reg = new RegExp(regStr);
+                console.log(reg);
+                for (let i = 0; i < this.page.length; i++) {
+                  let name = this.page[i].page_send_content; //按照内容匹配
+                  let regMatch = name.match(reg);
+                  if (null !== regMatch) {// 将匹配的数据放入结果列表中
+                    this.forum_ListRst.push(this.page[i]);
+                  }
+                }
+                console.log(this.forum_ListRst)
+                this.$emit('Screen1', this.forum_ListRst)
+              })
+        } else this.$emit('Screen1', this.page)
+      }
+
     }
   },
   mounted() {
-
+    const self = this
+    if (!this.isHome) {
+      self.axios.get("http://43.143.211.83:8080/forum_page_list").then((response) => {
+        self.page = response.data
+        console.log(1111111111)
+        console.log(self.page)
+        console.log(22222222222)
+      })
+    } else{
+      isLogin().then((res) =>{
+        self.axios.get('http://43.143.211.83:8080/forum_AllPage_list?' + 'page_sender_id=' + self.$store.state.user.forum_user_id + '&page_sender_name=' + self.$store.state.user.forum_user_name)
+            .then((response) => {
+              self.page = response.data
+              console.log(self.page)
+              console.log(response.data)
+              console.log(this.$store.state.user.isUserActive)
+            })
+      })
+    }
   },
   props: {
-    isUActive: false
+    isUActive: false,
+    search: {
+      type: String,
+      default: ""
+    },
+    isHome: false,
+    user_id: {
+      type: Number,
+      default: 0
+    },
+    user_name: {
+      type: String,
+      default: ""
+    }
   }
 };
 </script>

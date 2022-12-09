@@ -7,8 +7,8 @@
           已有账号？
         </div>
         <el-button
-          style="height: 60%;display:flex;align-items: center;margin-right: 50px;box-shadow: 2px 2px 5px 3px rgba(0,0,0,0.2);font-size: 18px"
-          @click="login">
+            style="height: 60%;display:flex;align-items: center;margin-right: 50px;box-shadow: 2px 2px 5px 3px rgba(0,0,0,0.2);font-size: 18px"
+            @click="login">
           登录
         </el-button>
       </div>
@@ -23,7 +23,7 @@
               <el-input v-model="ruleForm.email"/>
             </el-form-item>
             <el-form-item label="验证码" prop="code">
-              <el-input v-model="ruleForm.code" maxlength="5"/>
+              <el-input v-model="ruleForm.code" maxlength="6"/>
             </el-form-item>
             <div class="confirm1">
               <el-button round size="mini" @click="sendMsg">发送验证码</el-button>
@@ -39,7 +39,7 @@
         </div>
         <div class="yes">
           <div
-            style="margin-top: 20px;font-size: 25px;font-weight: 700;letter-spacing: 2px;color: rgba(0,0,0,0.6);display: flex;justify-content: center">
+              style="margin-top: 20px;font-size: 25px;font-weight: 700;letter-spacing: 2px;color: rgba(0,0,0,0.6);display: flex;justify-content: center">
             注册须知
           </div>
           <div class="content2">
@@ -67,7 +67,7 @@
 <script>
 import MarginFooter from "../Margin/marginFooter";
 import MarginHeader from "../Margin/marginHeader";
-import {isLogin} from "../api/getData";
+import {fun, isLogin} from "../api/getData";
 
 export default {
   name: "userLogin1",
@@ -77,11 +77,12 @@ export default {
       reg1: '',
       reg2: '',
       statusMsg: '',
+      code1: '',
       error: '',
       textarea: '请仔细阅读以下协议\n' +
-        '1、一切移动客户端用户在下载并浏览件时均被视为已经仔细阅读本条款并完全同意。凡以任何方式登陆网站，或直接、间接使用本资料者，均被视为自愿接受本网站相关声明和用户服务协议的约束。\n' +
-        '2、转载的内容并不代表网站的意见及观点，也不意味着本网赞同其观点或证实其内容的真实性。\n' +
-        '3、转载的文字、图片、音视频等资料均由用户提供，其真实性、准确性和合法性由信息发布人负责。不提供任何保证，并不承担任何法律责任。\n\n',
+          '1、一切移动客户端用户在下载并浏览件时均被视为已经仔细阅读本条款并完全同意。凡以任何方式登陆网站，或直接、间接使用本资料者，均被视为自愿接受本网站相关声明和用户服务协议的约束。\n' +
+          '2、转载的内容并不代表网站的意见及观点，也不意味着本网赞同其观点或证实其内容的真实性。\n' +
+          '3、转载的文字、图片、音视频等资料均由用户提供，其真实性、准确性和合法性由信息发布人负责。不提供任何保证，并不承担任何法律责任。\n\n',
       ruleForm: {
         agreed: false,
         name: '',
@@ -90,6 +91,7 @@ export default {
         cpwd: '',
         email: ''
       },
+      verification: false,
       ifExist: {
         forum_id: 0,
         forum_name: '',
@@ -170,6 +172,9 @@ export default {
       })
       // 模拟验证码发送
       if (!namePass && !emailPass) {
+        this.axios.get('http://43.143.211.83:8080/sendEmail?emailReceiver=' + this.ruleForm.email).then((res) => {
+          this.code1 = res.data
+        })
         let count = 60
         self.statusMsg = `验证码已发送,剩余${count--}秒`
         self.timerid = setInterval(function () {
@@ -193,30 +198,50 @@ export default {
     exist: function () {
       const self = this
       this.axios.get('http://43.143.211.83:8080/forum_oneUser_list?forum_user_name=' + this.ruleForm.name)
-        .then(function (response) {
-          console.log(response.data)
-          self.ifExist = response.data
-          console.log(self.ifExist)
-          if (self.ifExist.length === 0) {
-            alert("注册成功")
-            self.axios.post('http://43.143.211.83:8080/forum_user_add', {
-              "forum_name": self.ruleForm.name,
-              "forum_pwd": self.ruleForm.pwd,
-              "forum_email": self.ruleForm.email
+          .then(function (response) {
+            console.log(response.data)
+            self.ifExist = response.data
+            console.log(self.ifExist)
+            // self.code_is_correct()
+            self.axios.get('http://43.143.211.83:8080/getCodeList').then((res) => {
+              for (let i = 0; i < res.data.length; i++) {
+                if (self.ruleForm.code === res.data[i].code)
+                  self.verification = true
+              }
+              if (self.verification) {
+                if (self.ifExist.length === 0) {
+                  alert("注册成功")
+                  self.axios.post('http://43.143.211.83:8080/forum_user_add', {
+                    "forum_name": self.ruleForm.name,
+                    "forum_pwd": self.ruleForm.pwd,
+                    "forum_email": self.ruleForm.email
+                  })
+                  self.$router.push('/')
+                } else {
+                  console.log(self.ifExist.email)
+                  console.log(self.ifExist.email)
+                  console.log(self.ifExist.email)
+                  alert("名字已经存在，请换个名字吧")
+                }
+              } else alert("验证码错误")
             })
-            self.$router.push('/')
-          } else {
-            console.log(self.ifExist.email)
-            console.log(self.ifExist.email)
-            console.log(self.ifExist.email)
-            alert("名字已经存在，请换个名字吧")
-          }
-        })
+          })
     },
+
     login: function () {
       this.$router.push('/')
     },
+
+    code_is_correct: function () {
+      this.axios.get('http://43.143.211.83:8080/getCodeList').then((res) => {
+        for (let i = 0; i < res.data.length; i++) {
+          if (this.ruleForm.code === res.data[i].code)
+            this.verification = true
+        }
+      })
+    },
     register: function () {
+      console.log(1111111111111111111111111111)
       this.register1()
       this.register2()
       if (this.reg1 && this.reg2) {
@@ -259,7 +284,7 @@ export default {
 }
 
 .confirm1 {
-  margin-left:20px;
+  margin-left: 20px;
   display: flex;
   /*border: 2px solid red;*/
   justify-content: flex-start;
@@ -272,7 +297,7 @@ export default {
   margin-top: 10px;
   border: 2px solid rgba(0, 0, 0, 0.1);
   padding: 10px;
-  box-shadow: -2px -2px 5px 3px rgba(0, 0, 0, 0.5);
+  /*box-shadow: -2px -2px 5px 3px rgba(0, 0, 0, 0.5);*/
   border-radius: 20px;
 }
 
@@ -315,7 +340,7 @@ export default {
 .status {
   font-size: 12px;
   margin-left: 20px;
-  color: rgb(0,0,0);
+  color: rgb(0, 0, 0);
 }
 
 .yes {
